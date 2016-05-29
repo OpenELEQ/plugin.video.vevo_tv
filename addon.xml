@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<addon id="plugin.video.vevo_tv" name="VEVO TV" version="1.1.1" provider-name="AddonScriptorDE">
+<addon id="plugin.video.vevo_tv" name="VEVO TV" version="1.1.4q" provider-name="AddonScriptorDE, modded by [COLOR FF8ABEE2]Open[/COLOR][COLOR FF757677]ELEQ[/COLOR]">
     <requires>
-        <import addon="xbmc.python" version="2.1.0"/>
+        <import addon="xbmc.python" version="2.19.0"/>
     </requires>
     <extension point="xbmc.python.pluginsource" library="default.py">
         <provides>video audio</provides>

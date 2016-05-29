@@ -7,6 +7,7 @@ import json
 import shutil
 import random
 import socket
+import time
 import urllib
 import urllib2
 import xbmcplugin
@@ -26,6 +27,7 @@ addonUserDataFolder = xbmc.translatePath("special://profile/addon_data/"+addonID
 simpleChannelsFile = xbmc.translatePath("special://profile/addon_data/"+addonID+"/simple.channel")
 advancedChannelsDir = xbmc.translatePath("special://profile/addon_data/"+addonID+"/advanced")
 playlistsDir = xbmc.translatePath("special://profile/addon_data/"+addonID+"/playlists")
+libDir = xbmc.translatePath("special://profile/addon_data/"+addonID+"/library")
 tv1 = addon.getSetting("tv1") == "true"
 tv2 = addon.getSetting("tv2") == "true"
 tv3 = addon.getSetting("tv3") == "true"
@@ -48,10 +50,12 @@ showInfo = addon.getSetting("showInfo") == "true"
 infoType = addon.getSetting("infoType")
 infoDelay = int(addon.getSetting("infoDelay"))
 infoDuration = int(addon.getSetting("infoDuration"))
-bitrateOfficial = addon.getSetting("bitrateOfficialNew")
-bitrateOfficial = ["512000", "800000", "1392000", "2272000", "3500000", "AUTO"][int(bitrateOfficial)]
-bitrateCustom = addon.getSetting("bitrateCustom")
-bitrateCustom = ["564000", "864000", "1328000", "1728000", "2528000", "3328000", "4392000", "5392000", "AUTO"][int(bitrateCustom)]
+resolutionOfficial = addon.getSetting("resolutionOfficial")
+resolutionOfficial = ["1672000", "2640000", "4000000"][int(resolutionOfficial)]
+resolutionCustom = addon.getSetting("resolutionCustom")
+resolutionCustom = ["640x360", "960x540", "1280x720", "1920x1080"][int(resolutionCustom)]
+cdnCustom = addon.getSetting("cdnCustom")
+cdnCustom = ["hls-aws", "hls-aka", "hls-lvl3"][int(cdnCustom)]
 userAgent = "Mozilla/5.0 (Windows NT 6.1; rv:25.0) Gecko/20100101 Firefox/25.0"
 opener.addheaders = [('User-Agent', userAgent)]
 urlMainApi = "http://api.vevo.com/mobile/v1"
@@ -64,17 +68,113 @@ if not os.path.isdir(advancedChannelsDir):
 if not os.path.isdir(playlistsDir):
     os.mkdir(playlistsDir)
 if len(os.listdir(playlistsDir))==0:
-    fh = open(os.path.join(playlistsDir, 'staff picks'), 'w')
+    fh = open(os.path.join(playlistsDir, 'new artists (dutch)'), 'w')
+    fh.write("33347ae5-f4b5-4ff0-a83e-646899eece75")
+    fh.close()
+    fh = open(os.path.join(playlistsDir, 'featured (american)'), 'w')
+    fh.write("1bdbc337-36e8-4864-b60f-7de6d6eb6be7")
+    fh.close()
+    fh = open(os.path.join(playlistsDir, 'featured (canadian)'), 'w')
+    fh.write("a341cbb0-6ae4-42b9-bad7-bc452db77795")
+    fh.close()
+    fh = open(os.path.join(playlistsDir, 'featured (english)'), 'w')
+    fh.write("799962e0-1e5a-4e50-aec1-af35b81cb775")
+    fh.close()
+    fh = open(os.path.join(playlistsDir, 'featured (british)'), 'w')
+    fh.write("7a1fec0d-5efd-45aa-946b-84e69d0cd225")
+    fh.close()
+    fh = open(os.path.join(playlistsDir, 'featured (irish)'), 'w')
+    fh.write("799962e0-1e5a-4e50-aec1-af35b81cb775")
+    fh.close()
+    fh = open(os.path.join(playlistsDir, 'featured (australian)'), 'w')
+    fh.write("495ee93b-7e14-4319-beae-6ed6e176e46e")
+    fh.close()
+    fh = open(os.path.join(playlistsDir, 'featured (polish)'), 'w')
+    fh.write("63384529-32c2-498a-bce1-4d23367a79b1")
+    fh.close()
+    fh = open(os.path.join(playlistsDir, 'featured (spanish)'), 'w')
+    fh.write("b2a83aea-8cee-4509-82d7-b73a97cff949")
+    fh.close()
+    fh = open(os.path.join(playlistsDir, 'featured (portugese)'), 'w')
+    fh.write("af1abbc6-c937-45f9-8a89-354a32ed7aba")
+    fh.close()
+    fh = open(os.path.join(playlistsDir, 'featured (french)'), 'w')
+    fh.write("472cd938-bc76-4db9-a671-9c50a169b090")
+    fh.close()
+    fh = open(os.path.join(playlistsDir, 'featured (dutch)'), 'w')
+    fh.write("76ba2991-5791-48a2-a28e-f1074d356ccb")
+    fh.close()
+    fh = open(os.path.join(playlistsDir, 'featured (italian)'), 'w')
+    fh.write("9e122f0f-f4b4-401d-a67d-cd9f0a0cec2b")
+    fh.close()
+    fh = open(os.path.join(playlistsDir, 'featured (german)'), 'w')
+    fh.write("819d8490-9250-41a3-b188-e39ab956cc17")
+    fh.close()
+    fh = open(os.path.join(playlistsDir, 'staff picks (american'), 'w')
     fh.write("8b75ba3c-4322-4946-9288-949b6ac1bf5b")
     fh.close()
     fh = open(os.path.join(playlistsDir, 'staff picks (german)'), 'w')
     fh.write("4d9ce4e3-3391-45cf-a472-b968ef6f4ba9")
     fh.close()
-    fh = open(os.path.join(playlistsDir, 'emerging artists'), 'w')
+    fh = open(os.path.join(playlistsDir, 'staff picks (italian)'), 'w')
+    fh.write("eede427e-06e1-489e-8493-312dd8774940")
+    fh.close()
+    fh = open(os.path.join(playlistsDir, 'staff picks (polish)'), 'w')
+    fh.write("1b463ddf-3303-42e9-8931-e7f83a4edcd4")
+    fh.close()
+    fh = open(os.path.join(playlistsDir, 'staff picks (french)'), 'w')
+    fh.write("692d8694-34d5-4aed-a5cc-7eb672c5d3a5")
+    fh.close()
+    fh = open(os.path.join(playlistsDir, 'staff picks (brazilian)'), 'w')
+    fh.write("f36806ad-afa9-4e18-a531-1a0ae20226ba")
+    fh.close()
+    fh = open(os.path.join(playlistsDir, 'staff picks (spanish)'), 'w')
+    fh.write("97f0ef24-5950-4c88-9b87-2a384ac639a7")
+    fh.close()
+    fh = open(os.path.join(playlistsDir, 'staff picks (dutch)'), 'w')
+    fh.write("93f9a5ee-7543-4281-a6b4-0cc5403329a0")
+    fh.close()
+    fh = open(os.path.join(playlistsDir, 'staff picks (australian)'), 'w')
+    fh.write("20cf8575-867f-43c1-bc28-b04cda70d47c")
+    fh.close()
+    fh = open(os.path.join(playlistsDir, 'staff picks (british)'), 'w')
+    fh.write("37de2753-b687-4fcb-81e0-88a64aeec570")
+    fh.close()
+    fh = open(os.path.join(playlistsDir, 'staff picks (mexican)'), 'w')
+    fh.write("8414fece-92e4-4a40-bf2f-226628321115")
+    fh.close()
+    fh = open(os.path.join(playlistsDir, 'emerging artists (american)'), 'w')
     fh.write("cdefd9b9-6401-481d-a063-c8f77435b29d")
     fh.close()
     fh = open(os.path.join(playlistsDir, 'emerging artists (german)'), 'w')
     fh.write("07422048-d4b0-4660-9e03-a15166474238")
+    fh.close()
+    fh = open(os.path.join(playlistsDir, 'emerging artists (italian)'), 'w')
+    fh.write("de10ea42-b6c9-47c7-9b1d-f05174fedf8c")
+    fh.close()
+    fh = open(os.path.join(playlistsDir, 'emerging artists (polish)'), 'w')
+    fh.write("ae064eaf-dedf-421b-9a75-65f3801bac23")
+    fh.close()
+    fh = open(os.path.join(playlistsDir, 'emerging artists (french)'), 'w')
+    fh.write("44e59183-a622-4061-a248-25802f440b0e")
+    fh.close()
+    fh = open(os.path.join(playlistsDir, 'emerging artists (brazilian)'), 'w')
+    fh.write("7cf20646-7516-4052-9587-ae151a84ae77")
+    fh.close()
+    fh = open(os.path.join(playlistsDir, 'emerging artists (spanish)'), 'w')
+    fh.write("9d03262b-fa86-48ab-a6d0-3da73df05066")
+    fh.close()
+    fh = open(os.path.join(playlistsDir, 'emerging artists (dutch)'), 'w')
+    fh.write("ae064eaf-dedf-421b-9a75-65f3801bac23")
+    fh.close()
+    fh = open(os.path.join(playlistsDir, 'emerging artists (australian)'), 'w')
+    fh.write("e743b4f5-c707-4f49-9688-d74f88a9f513")
+    fh.close()
+    fh = open(os.path.join(playlistsDir, 'emerging artists (british)'), 'w')
+    fh.write("188abb56-1a28-4478-9237-04d5a3349182")
+    fh.close()
+    fh = open(os.path.join(playlistsDir, 'emerging artists (mexican)'), 'w')
+    fh.write("ad30fa43-7c9e-40f3-a717-eab83174fb31")
     fh.close()
 
 
@@ -92,26 +192,24 @@ def index():
     addDir(translation(30003), "", 'listPlaylists', "")
     addDir(translation(30004), "", 'listChannelsAdvancedMain', "")
     xbmcplugin.endOfDirectory(pluginhandle)
-
+    
+#api.vevo.com/mobile/v1/genre/list.json responses seems to depend on the country
+    #and does not always return all genres that are listed on the website
 
 def customMain(type):
     if type == "default":
         currentMode = 'listCustomModes'
     elif type == "live":
         currentMode = 'listCustomModesLive'
-    content = opener.open(urlMain).read()
-    if "var $data" in content:
-        #api.vevo.com/mobile/v1/genre/list.json responses seems to depend on the country
-        #and does not always return all genres that are listed on the website
-        content = opener.open(urlMain+"/browse").read()
-        content = content[content.find('"browseCategoryList"'):]
-        content = content[:content.find(']')]
-        match = re.compile('"id":"(.+?)","loc":"(.+?)"', re.DOTALL).findall(content)
-        for id, title in match:
-            addDir(title, id, currentMode, "")
-        xbmcplugin.endOfDirectory(pluginhandle)
-    else:
-        xbmc.executebuiltin('XBMC.Notification(Info:,'+translation(30030)+',5000)')
+    content = opener.open(urlMain+"/browse").read()
+    data=re.findall('browseCategoryList(.*?)]',content,re.S)[0]
+    for id, title in re.findall('id":"(.*?)","loc":"(.*?)"',data,re.S):
+		print id
+		print title
+		addDir(title, id, currentMode, "")
+    xbmcplugin.endOfDirectory(pluginhandle)
+   # else:
+        #xbmc.executebuiltin('XBMC.Notification(Info:,'+translation(30030)+',5000)')
 
 
 def listCustomModes(id, type=""):
@@ -151,28 +249,21 @@ def listCustomModes(id, type=""):
 
 
 def playOfficial(id):
-    content = opener.open(urlMain).read()
-    if "noVTV: false" in content:
-        if bitrateOfficial=="AUTO":
-            if id=="TIVEVSTRUS00":
+        if id=="TIVEVSTRUS00":
                 fullUrl = "http://vevoplaylist-live.hls.adaptive.level3.net/vevo/ch1/appleman.m3u8"
-            elif id=="TIVEVSTRUS01":
-                fullUrl = "http://vevoplaylist-live.hls.adaptive.level3.net/vevo/ch2/appleman.m3u8"
-            elif id=="TIVEVSTRUS02":
-                fullUrl = "http://vevoplaylist-live.hls.adaptive.level3.net/vevo/ch3/appleman.m3u8"
-            elif id=="TIVEVSTRDE00":
-                fullUrl = "http://vevoplaylist-eu01-live.hls.adaptive.level3.net/vevoeu/ch01/appleman.m3u8"
-        else:
-            content = opener.open("http://smil.lvl3.vevo.com/v3/smil/"+id+"/"+id+"r.smil").read()
-            matchBase = re.compile('<meta base="(.+?)" />', re.DOTALL).findall(content)
-            matchPlaypath = re.compile('<video src="(.+?)" system-bitrate="(.+?)" />', re.DOTALL).findall(content)
-            for url, bitrate in matchPlaypath:
-                if int(bitrate) <= int(bitrateOfficial):
-                    fullUrl = matchBase[0]+" playpath="+url+" swfUrl="+urlMain+"/swf/videoplayer.swf swfVfy=true live=true"
+        elif id=="TIVEVSTRUS01":
+            fullUrl = "http://vevoplaylist-live.hls.adaptive.level3.net/vevo/ch2/appleman.m3u8"
+        elif id=="TIVEVSTRUS02":
+            fullUrl = "http://vevoplaylist-live.hls.adaptive.level3.net/vevo/ch3/appleman.m3u8"
+        elif id=="TIVEVSTRDE00":
+            fullUrl = "http://vevoplaylist-eu01-live.hls.adaptive.level3.net/vevoeu/ch01/appleman.m3u8"
+        content = opener.open(fullUrl).read()
+        match = re.compile('BANDWIDTH='+resolutionOfficial+'.*?(.+?).m3u8', re.DOTALL).findall(content)
+        fullUrl = fullUrl[:fullUrl.rfind("/")]+"/"+match[len(match)-1].strip()+".m3u8"
+        print 'Ffffffffffffffffffffffffffffffffffffffffff'+fullUrl
         listitem = xbmcgui.ListItem(path=fullUrl)
         xbmcplugin.setResolvedUrl(pluginhandle, True, listitem)
-    else:
-        xbmc.executebuiltin('XBMC.Notification(Info:,'+translation(30031)+',5000)')
+    
 
 
 def listChannelsSimple():
@@ -270,6 +361,81 @@ def addAdvancedChannelArtist(channel):
                   fh.close()
                   count+=1
           xbmc.executebuiltin('XBMC.Notification(Info:,'+translation(30013)+' '+str(count)+' '+translation(30014)+',5000)')
+
+
+def addArtistChannel(name):
+    artist = name.replace(" ", "+")
+    titles = []
+    titlesRaw = []
+    ids = []
+    content = opener.open("http://api.vevo.com/mobile/v1/search/artists.json?q="+artist+"&offset=0&max=100").read()
+    content = json.loads(content)
+    for item in content["result"]:
+        title = item["name"].encode('utf-8')
+        id = item["id"].encode('utf-8')
+        videos = str(item["video_count"])
+        titles.append(title+" ("+videos+")")
+        titlesRaw.append(title)
+        ids.append(id)
+    dialog = xbmcgui.Dialog()
+    nr=dialog.select("Results", titles)
+    if nr >=0:
+      id = ids[nr]
+      title = titlesRaw[nr]
+      channel = title.replace("+", " ")
+      channelDir = os.path.join(advancedChannelsDir, title)
+      if not os.path.exists(os.path.join(advancedChannelsDir, title)):
+          os.mkdir(os.path.join(advancedChannelsDir, title))
+      dirName = (''.join(c for c in unicode(title, 'utf-8') if c not in '/\\:?"*|<>')).strip()
+      artistDir = os.path.join(channelDir, dirName)
+      if not os.path.exists(artistDir):
+          os.mkdir(artistDir)
+      artistIdFile = os.path.join(artistDir, "artistID")
+      if not os.path.exists(artistIdFile):
+          fh = open(artistIdFile, 'w')
+          fh.write(id)
+          fh.close()
+      content = opener.open("http://api.vevo.com/mobile/v1/artist/"+id+"/videos.json?order=MostViewedToday&offset=0&max=200").read()
+      content = json.loads(content)
+      count = 0
+      for item in content["result"]:
+          title = item["artists_main"][0]["name"].encode('utf-8')+" - "+item["title"].encode('utf-8')
+          videoID = item["isrc"]
+          thumb = item["image_url"].encode('utf-8')
+          videoFile = os.path.join(artistDir, videoID)
+          if not os.path.exists(videoFile):
+              fh = open(videoFile, 'w')
+              fh.write(title+"#"+thumb)
+              fh.close()
+              count+=1
+      xbmc.executebuiltin('XBMC.Notification(Info:,'+translation(30013)+' '+str(count)+' '+translation(30014)+',5000)')
+      if not os.path.exists(libDir):
+          os.mkdir(libDir)
+      if not os.path.exists(os.path.join(libDir, channel)):
+          os.mkdir(os.path.join(libDir, channel))
+      libartistDir = os.path.join(libDir, channel)
+      for root, dirs, files in os.walk(os.path.join(advancedChannelsDir, channel)):
+          for filename in files:
+              if filename!="artistID":
+                  fh = open(os.path.join(root, filename), 'r')
+                  entry = fh.read()
+                  fh.close()
+                  title = entry[:entry.rfind("#")]
+                  if '-' in title:
+                      newtitle = title.rsplit('-',1)
+                      title = newtitle[1]
+                  thumb = entry[entry.rfind("#")+1:]
+                  if xbox:
+                      url = "plugin://video/VEVO TV/?url="+filename+"&mode=playVideo"
+                  else:
+                      url = "plugin://plugin.video.vevo_tv/?url="+filename+"&mode=playVideo"
+                  musicVideoStrmFile = os.path.join(libartistDir, title.replace('/','_').replace(':','_').replace('*','_').replace('?','_').replace('"','_').replace('<','_').replace('>','_').replace('|','_')+".strm")
+                  if not os.path.exists(musicVideoStrmFile):
+                      fh = open(musicVideoStrmFile, 'w')
+                      fh.write(url)
+                      fh.close()
+      xbmc.executebuiltin("UpdateLibrary(video,special://profile/addon_data/plugin.video.vevo_tv/library)")
+      playAdvancedChannel(channel)
 
 
 def updateArtist(channel, artist):
@@ -411,21 +577,16 @@ def playAdvancedChannel(channel):
 
 def playVideo(id):
     try:
-        #content = opener.open("http://vevoodfs.fplive.net/Video/V2/VFILE/"+id+"/"+id.lower()+"r.smil").read()
-        if bitrateCustom=="AUTO":
-            #fullUrl = "http://hls-lvl3.vevo.com/v3/hls/"+id+"/index.m3u8"
-            fullUrl = "http://hls-aws.vevo.com/v3/hls/"+id+"/index.m3u8"
-        else:
-            try:
-                content = opener.open("http://smil.lvl3.vevo.com/Video/V2/VFILE/"+id+"/"+id.lower()+"r.smil").read()
-                matchBase = re.compile('<meta base="(.+?)" />', re.DOTALL).findall(content)
-            except:
-                content = opener.open("http://smil.lvl3.vevo.com/v3/smil/"+id+"/"+id.lower()+"r.smil").read()
-                matchBase = re.compile('<meta base="(.+?)" />', re.DOTALL).findall(content)
-            matchPlaypath = re.compile('<video src="(.+?)" system-bitrate="(.+?)" />', re.DOTALL).findall(content)
-            for url, bitrate in matchPlaypath:
-                if int(bitrate) <= int(bitrateCustom):
-                    fullUrl = matchBase[0]+" playpath="+url
+        content = opener.open("http://videoplayer.vevo.com/VideoService/AuthenticateVideo?isrc="+id).read()
+        content = str(json.loads(content))
+        match = re.compile('<rendition name="HTTP Live Streaming" url="(.+?)"', re.DOTALL).findall(content)
+        fullUrl = ""
+        for url in match:
+          if cdnCustom in url:
+              fullUrl = url
+        content = opener.open(fullUrl).read()
+        match = re.compile('RESOLUTION='+resolutionCustom+'.*?\n(.+?)\n', re.DOTALL).findall(content)
+        fullUrl = fullUrl[:fullUrl.rfind("/")]+"/"+match[len(match)-1].strip()
         listitem = xbmcgui.ListItem(path=fullUrl)
         xbmcplugin.setResolvedUrl(pluginhandle, True, listitem)
         if showInfo:
@@ -560,6 +721,10 @@ elif mode == 'listAdvancedChannel':
     listAdvancedChannel(url)
 elif mode == 'addAdvancedChannelArtist':
     addAdvancedChannelArtist(url)
+elif mode == 'addArtistChannel':
+    addArtistChannel(name)
+elif mode == 'addArtistChannel':
+    addArtistChannel(name)
 elif mode == 'editSimpleChannel':
     editSimpleChannel(url)
 elif mode == 'removeSimpleChannel':
