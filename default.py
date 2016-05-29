@@ -48,12 +48,10 @@ showInfo = addon.getSetting("showInfo") == "true"
 infoType = addon.getSetting("infoType")
 infoDelay = int(addon.getSetting("infoDelay"))
 infoDuration = int(addon.getSetting("infoDuration"))
-resolutionOfficial = addon.getSetting("resolutionOfficial")
-resolutionOfficial = ["1672000", "2640000", "4000000"][int(resolutionOfficial)]
-resolutionCustom = addon.getSetting("resolutionCustom")
-resolutionCustom = ["640x360", "960x540", "1280x720", "1920x1080"][int(resolutionCustom)]
-cdnCustom = addon.getSetting("cdnCustom")
-cdnCustom = ["hls-aws", "hls-aka", "hls-lvl3"][int(cdnCustom)]
+bitrateOfficial = addon.getSetting("bitrateOfficialNew")
+bitrateOfficial = ["512000", "800000", "1392000", "2272000", "3500000", "AUTO"][int(bitrateOfficial)]
+bitrateCustom = addon.getSetting("bitrateCustom")
+bitrateCustom = ["564000", "864000", "1328000", "1728000", "2528000", "3328000", "4392000", "5392000", "AUTO"][int(bitrateCustom)]
 userAgent = "Mozilla/5.0 (Windows NT 6.1; rv:25.0) Gecko/20100101 Firefox/25.0"
 opener.addheaders = [('User-Agent', userAgent)]
 urlMainApi = "http://api.vevo.com/mobile/v1"
@@ -94,24 +92,26 @@ def index():
     addDir(translation(30003), "", 'listPlaylists', "")
     addDir(translation(30004), "", 'listChannelsAdvancedMain', "")
     xbmcplugin.endOfDirectory(pluginhandle)
-    
-#api.vevo.com/mobile/v1/genre/list.json responses seems to depend on the country
-    #and does not always return all genres that are listed on the website
+
 
 def customMain(type):
     if type == "default":
         currentMode = 'listCustomModes'
     elif type == "live":
         currentMode = 'listCustomModesLive'
-    content = opener.open(urlMain+"/browse").read()
-    data=re.findall('browseCategoryList(.*?)]',content,re.S)[0]
-    for id, title in re.findall('id":"(.*?)","loc":"(.*?)"',data,re.S):
-		print id
-		print title
-		addDir(title, id, currentMode, "")
-    xbmcplugin.endOfDirectory(pluginhandle)
-   # else:
-        #xbmc.executebuiltin('XBMC.Notification(Info:,'+translation(30030)+',5000)')
+    content = opener.open(urlMain).read()
+    if "var $data" in content:
+        #api.vevo.com/mobile/v1/genre/list.json responses seems to depend on the country
+        #and does not always return all genres that are listed on the website
+        content = opener.open(urlMain+"/browse").read()
+        content = content[content.find('"browseCategoryList"'):]
+        content = content[:content.find(']')]
+        match = re.compile('"id":"(.+?)","loc":"(.+?)"', re.DOTALL).findall(content)
+        for id, title in match:
+            addDir(title, id, currentMode, "")
+        xbmcplugin.endOfDirectory(pluginhandle)
+    else:
+        xbmc.executebuiltin('XBMC.Notification(Info:,'+translation(30030)+',5000)')
 
 
 def listCustomModes(id, type=""):
@@ -151,21 +151,28 @@ def listCustomModes(id, type=""):
 
 
 def playOfficial(id):
-        if id=="TIVEVSTRUS00":
+    content = opener.open(urlMain).read()
+    if "noVTV: false" in content:
+        if bitrateOfficial=="AUTO":
+            if id=="TIVEVSTRUS00":
                 fullUrl = "http://vevoplaylist-live.hls.adaptive.level3.net/vevo/ch1/appleman.m3u8"
-        elif id=="TIVEVSTRUS01":
-            fullUrl = "http://vevoplaylist-live.hls.adaptive.level3.net/vevo/ch2/appleman.m3u8"
-        elif id=="TIVEVSTRUS02":
-            fullUrl = "http://vevoplaylist-live.hls.adaptive.level3.net/vevo/ch3/appleman.m3u8"
-        elif id=="TIVEVSTRDE00":
-            fullUrl = "http://vevoplaylist-eu01-live.hls.adaptive.level3.net/vevoeu/ch01/appleman.m3u8"
-        content = opener.open(fullUrl).read()
-        match = re.compile('BANDWIDTH='+resolutionOfficial+'.*?(.+?).m3u8', re.DOTALL).findall(content)
-        fullUrl = fullUrl[:fullUrl.rfind("/")]+"/"+match[len(match)-1].strip()+".m3u8"
-        print 'Ffffffffffffffffffffffffffffffffffffffffff'+fullUrl
+            elif id=="TIVEVSTRUS01":
+                fullUrl = "http://vevoplaylist-live.hls.adaptive.level3.net/vevo/ch2/appleman.m3u8"
+            elif id=="TIVEVSTRUS02":
+                fullUrl = "http://vevoplaylist-live.hls.adaptive.level3.net/vevo/ch3/appleman.m3u8"
+            elif id=="TIVEVSTRDE00":
+                fullUrl = "http://vevoplaylist-eu01-live.hls.adaptive.level3.net/vevoeu/ch01/appleman.m3u8"
+        else:
+            content = opener.open("http://smil.lvl3.vevo.com/v3/smil/"+id+"/"+id+"r.smil").read()
+            matchBase = re.compile('<meta base="(.+?)" />', re.DOTALL).findall(content)
+            matchPlaypath = re.compile('<video src="(.+?)" system-bitrate="(.+?)" />', re.DOTALL).findall(content)
+            for url, bitrate in matchPlaypath:
+                if int(bitrate) <= int(bitrateOfficial):
+                    fullUrl = matchBase[0]+" playpath="+url+" swfUrl="+urlMain+"/swf/videoplayer.swf swfVfy=true live=true"
         listitem = xbmcgui.ListItem(path=fullUrl)
         xbmcplugin.setResolvedUrl(pluginhandle, True, listitem)
-    
+    else:
+        xbmc.executebuiltin('XBMC.Notification(Info:,'+translation(30031)+',5000)')
 
 
 def listChannelsSimple():
@@ -404,16 +411,21 @@ def playAdvancedChannel(channel):
 
 def playVideo(id):
     try:
-        content = opener.open("http://api.vevo.com/VideoService/AuthenticateVideo?isrc="+id).read()
-        content = str(json.loads(content))
-        match = re.compile('<rendition name="HTTP Live Streaming" url="(.+?)"', re.DOTALL).findall(content)
-        fullUrl = ""
-        for url in match:
-          if cdnCustom in url:
-              fullUrl = url
-        content = opener.open(fullUrl).read()
-        match = re.compile('RESOLUTION='+resolutionCustom+'.*?\n(.+?)\n', re.DOTALL).findall(content)
-        fullUrl = fullUrl[:fullUrl.rfind("/")]+"/"+match[len(match)-1].strip()
+        #content = opener.open("http://vevoodfs.fplive.net/Video/V2/VFILE/"+id+"/"+id.lower()+"r.smil").read()
+        if bitrateCustom=="AUTO":
+            #fullUrl = "http://hls-lvl3.vevo.com/v3/hls/"+id+"/index.m3u8"
+            fullUrl = "http://hls-aws.vevo.com/v3/hls/"+id+"/index.m3u8"
+        else:
+            try:
+                content = opener.open("http://smil.lvl3.vevo.com/Video/V2/VFILE/"+id+"/"+id.lower()+"r.smil").read()
+                matchBase = re.compile('<meta base="(.+?)" />', re.DOTALL).findall(content)
+            except:
+                content = opener.open("http://smil.lvl3.vevo.com/v3/smil/"+id+"/"+id.lower()+"r.smil").read()
+                matchBase = re.compile('<meta base="(.+?)" />', re.DOTALL).findall(content)
+            matchPlaypath = re.compile('<video src="(.+?)" system-bitrate="(.+?)" />', re.DOTALL).findall(content)
+            for url, bitrate in matchPlaypath:
+                if int(bitrate) <= int(bitrateCustom):
+                    fullUrl = matchBase[0]+" playpath="+url
         listitem = xbmcgui.ListItem(path=fullUrl)
         xbmcplugin.setResolvedUrl(pluginhandle, True, listitem)
         if showInfo:
